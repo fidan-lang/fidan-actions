@@ -120,7 +120,7 @@ switch ($PSCmdlet.ParameterSetName) {
   }
 
   'Major' {
-    $tag = Normalize-MajorTag -Value $MajorTag
+    $tag = ConvertTo-MajorTag -Value $MajorTag
     $pushArgs = @('push', $Remote, "refs/tags/$tag")
 
     if (Test-GitRefExists -Ref "refs/tags/$tag") {
