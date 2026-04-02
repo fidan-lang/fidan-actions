@@ -1,0 +1,112 @@
+name: Setup Fidan
+description: Download and install a Fidan CLI release for the current runner.
+author: Kaan Gönüldinc
+branding:
+  icon: terminal
+  color: green
+
+inputs:
+  version:
+    description: Exact Fidan version to install, or `latest`.
+    required: false
+    default: latest
+  manifest-url:
+    description: URL of the Fidan release manifest JSON.
+    required: false
+    default: https://releases.fidan.dev/manifest.json
+  install-dir:
+    description: Directory where Fidan should be installed. Leave empty to use the runner temp directory.
+    required: false
+    default: ""
+  cache:
+    description: Whether to cache the resolved install directory.
+    required: false
+    default: "true"
+
+outputs:
+  fidan-bin:
+    description: Absolute path to the installed Fidan binary.
+    value: ${{ steps.finalize.outputs.fidan-bin }}
+  install-dir:
+    description: Absolute install directory.
+    value: ${{ steps.finalize.outputs.install-dir }}
+  version-resolved:
+    description: Resolved Fidan version that was installed.
+    value: ${{ steps.finalize.outputs.version-resolved }}
+  host-triple:
+    description: Host triple selected for the runner.
+    value: ${{ steps.finalize.outputs.host-triple }}
+  cache-hit:
+    description: Whether the action restored the install directory from cache.
+    value: ${{ steps.finalize.outputs.cache-hit }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve version and cache key
+      id: resolve
+      shell: bash
+      run: node "$GITHUB_ACTION_PATH/setup/scripts/resolve-fidan.mjs"
+      env:
+        INPUT_VERSION: ${{ inputs.version }}
+        INPUT_MANIFEST_URL: ${{ inputs.manifest-url }}
+        INPUT_INSTALL_DIR: ${{ inputs.install-dir }}
+
+    - name: Restore cached install
+      if: ${{ inputs.cache == 'true' }}
+      id: cache
+      uses: actions/cache@v5
+      with:
+        path: ${{ steps.resolve.outputs.install-dir }}
+        key: fidan-${{ runner.os }}-${{ steps.resolve.outputs.host-triple }}-${{ steps.resolve.outputs.version-resolved }}
+
+    - name: Install Fidan (Unix)
+      if: ${{ runner.os != 'Windows' && (inputs.cache != 'true' || steps.cache.outputs.cache-hit != 'true') }}
+      shell: bash
+      run: "$GITHUB_ACTION_PATH/setup/scripts/install-fidan.sh"
+      env:
+        FIDAN_URL: ${{ steps.resolve.outputs.archive-url }}
+        FIDAN_SHA256: ${{ steps.resolve.outputs.archive-sha256 }}
+        FIDAN_BINARY_RELPATH: ${{ steps.resolve.outputs.binary-relpath }}
+        FIDAN_INSTALL_DIR: ${{ steps.resolve.outputs.install-dir }}
+        GITHUB_PATH: ${{ github.path }}
+
+    - name: Install Fidan (Windows)
+      if: ${{ runner.os == 'Windows' && (inputs.cache != 'true' || steps.cache.outputs.cache-hit != 'true') }}
+      shell: pwsh
+      run: '& "$env:GITHUB_ACTION_PATH/setup/scripts/install-fidan.ps1"'
+      env:
+        FIDAN_URL: ${{ steps.resolve.outputs.archive-url }}
+        FIDAN_SHA256: ${{ steps.resolve.outputs.archive-sha256 }}
+        FIDAN_BINARY_RELPATH: ${{ steps.resolve.outputs.binary-relpath }}
+        FIDAN_INSTALL_DIR: ${{ steps.resolve.outputs.install-dir }}
+        GITHUB_PATH: ${{ github.path }}
+
+    - name: Finalize outputs
+      id: finalize
+      shell: bash
+      env:
+        CACHE_HIT: ${{ steps.cache.outputs.cache-hit }}
+      run: |
+        install_dir='${{ steps.resolve.outputs.install-dir }}'
+        bin_rel='${{ steps.resolve.outputs.binary-relpath }}'
+        host_triple='${{ steps.resolve.outputs.host-triple }}'
+        version_resolved='${{ steps.resolve.outputs.version-resolved }}'
+        bin_path="$install_dir/$bin_rel"
+        if [ ! -f "$bin_path" ]; then
+          echo "Installed Fidan binary was not found at $bin_path" >&2
+          exit 1
+        fi
+        chmod +x "$bin_path" || true
+        printf '%s\n' "$(dirname "$bin_path")" >> "$GITHUB_PATH"
+        cache_hit="${CACHE_HIT:-false}"
+        if [ -z "$cache_hit" ]; then
+          cache_hit='false'
+        fi
+        {
+          echo "fidan-bin=$bin_path"
+          echo "install-dir=$install_dir"
+          echo "version-resolved=$version_resolved"
+          echo "host-triple=$host_triple"
+          echo "cache-hit=$cache_hit"
+        } >> "$GITHUB_OUTPUT"
