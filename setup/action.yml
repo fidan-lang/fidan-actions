@@ -46,7 +46,7 @@ runs:
     - name: Resolve version and cache key
       id: resolve
       shell: bash
-      run: node "$GITHUB_ACTION_PATH/setup/scripts/resolve-fidan.mjs"
+      run: node "$GITHUB_ACTION_PATH/scripts/resolve-fidan.mjs"
       env:
         INPUT_VERSION: ${{ inputs.version }}
         INPUT_MANIFEST_URL: ${{ inputs.manifest-url }}
@@ -63,7 +63,7 @@ runs:
     - name: Install Fidan (Unix)
       if: ${{ runner.os != 'Windows' && (inputs.cache != 'true' || steps.cache.outputs.cache-hit != 'true') }}
       shell: bash
-      run: "$GITHUB_ACTION_PATH/setup/scripts/install-fidan.sh"
+      run: "$GITHUB_ACTION_PATH/scripts/install-fidan.sh"
       env:
         FIDAN_URL: ${{ steps.resolve.outputs.archive-url }}
         FIDAN_SHA256: ${{ steps.resolve.outputs.archive-sha256 }}
@@ -74,7 +74,7 @@ runs:
     - name: Install Fidan (Windows)
       if: ${{ runner.os == 'Windows' && (inputs.cache != 'true' || steps.cache.outputs.cache-hit != 'true') }}
       shell: pwsh
-      run: '& "$env:GITHUB_ACTION_PATH/setup/scripts/install-fidan.ps1"'
+      run: '& "$env:GITHUB_ACTION_PATH/scripts/install-fidan.ps1"'
       env:
         FIDAN_URL: ${{ steps.resolve.outputs.archive-url }}
         FIDAN_SHA256: ${{ steps.resolve.outputs.archive-sha256 }}
