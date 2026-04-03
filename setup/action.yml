@@ -63,7 +63,7 @@ runs:
     - name: Install Fidan (Unix)
       if: ${{ runner.os != 'Windows' && (inputs.cache != 'true' || steps.cache.outputs.cache-hit != 'true') }}
       shell: bash
-      run: "$GITHUB_ACTION_PATH/scripts/install-fidan.sh"
+      run: bash "$GITHUB_ACTION_PATH/scripts/install-fidan.sh"
       env:
         FIDAN_URL: ${{ steps.resolve.outputs.archive-url }}
         FIDAN_SHA256: ${{ steps.resolve.outputs.archive-sha256 }}
