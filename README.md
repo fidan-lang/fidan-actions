@@ -5,13 +5,13 @@ Reusable GitHub Actions for the **Fidan** ecosystem.
 This repository is the home for automation building blocks that other Fidan
 repositories can consume from GitHub Actions workflows.
 
-Planned usage looks like this:
+The implemented setup action installs a checksum-verified release and caches the installation:
 
 ```yaml
 uses: fidan-lang/fidan-actions/setup@v1
 ```
 
-The first action planned here is a setup/install action that will download a
+The setup action downloads a
 specific Fidan version from the public distribution bucket, restore cached
 artifacts when possible, and expose the installed binary to downstream steps.
 
@@ -30,9 +30,9 @@ Good fits for this repo include:
 Compiler, runtime, language, toolchain, and package-manager changes still
 belong in the main Fidan repository.
 
-## Planned Structure
+## Structure
 
-As this repository grows, it will typically contain action folders such as:
+The current action is organized as:
 
 ```text
 setup/
@@ -52,6 +52,4 @@ other repositories can consume safely.
 
 ## Status
 
-This repository is being prepared as the shared action home for the Fidan org.
-The `setup` action is the first planned action, but the repo itself is meant to
-host multiple reusable actions over time.
+`setup/` is implemented. Tags `v1` and `v1.0.0` exist; this audit branch is not released. Pin the reviewed commit SHA for immutable workflows. `latest` selects stable SemVer releases; exact prereleases require an explicit version. The manifest and HTTPS distribution are trusted publisher inputs; GitHub cache scope remains a trust boundary.
