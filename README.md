@@ -12,8 +12,8 @@ uses: fidan-lang/fidan-actions/setup@v1
 ```
 
 The setup action downloads a
-specific Fidan version from the public distribution bucket, restore cached
-artifacts when possible, and expose the installed binary to downstream steps.
+specific Fidan version from the public distribution bucket, restores cached
+artifacts when possible, and exposes the installed binary to downstream steps.
 
 ## Scope
 
