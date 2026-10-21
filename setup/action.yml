@@ -58,7 +58,7 @@ runs:
       uses: actions/cache@v6
       with:
         path: ${{ steps.resolve.outputs.install-dir }}
-        key: fidan-v2-${{ steps.resolve.outputs.cache-key }}
+        key: fidan-v3-${{ steps.resolve.outputs.cache-key }}
 
     - name: Install Fidan (Unix)
       if: ${{ runner.os != 'Windows' && (inputs.cache != 'true' || steps.cache.outputs.cache-hit != 'true') }}
