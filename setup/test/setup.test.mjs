@@ -423,3 +423,11 @@ test(
     });
   },
 );
+
+test("distribution uses unmodified Apache 2.0 and retains NOTICE", () => {
+  assert.equal(
+    createHash("sha256").update(fs.readFileSync(new URL("../../LICENSE", import.meta.url))).digest("hex"),
+    "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+  );
+  assert.match(fs.readFileSync(new URL("../../NOTICE", import.meta.url), "utf8"), /Copyright/);
+});
