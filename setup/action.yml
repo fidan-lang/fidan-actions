@@ -55,7 +55,7 @@ runs:
     - name: Restore cached install
       if: ${{ inputs.cache == 'true' }}
       id: cache
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0, official release verified 2026-10-22
       with:
         path: ${{ steps.resolve.outputs.install-dir }}
         key: fidan-v3-${{ steps.resolve.outputs.cache-key }}

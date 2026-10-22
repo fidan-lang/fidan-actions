@@ -1,4 +1,5 @@
 import { appendFileSync, mkdirSync } from "node:fs";
+import { setTimeout as delay } from "node:timers/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -100,15 +101,28 @@ export function safeBinaryPath(value) {
   return value;
 }
 
+// Retry only explicitly transient read responses, within one total timeout.
+// A long Retry-After is returned to the caller rather than retried prematurely.
+export async function fetchReleaseResponse(url, timeoutMs) {
+  safeUrl(url);
+  const signal = AbortSignal.timeout(timeoutMs);
+  for (let attempt = 0; ; attempt++) {
+    const response = await fetch(url, { signal, headers: { "user-agent": "fidan-actions/setup" } });
+    safeUrl(response.url);
+    if (![429, 503].includes(response.status) || attempt === 2) return response;
+    const retry = response.headers.get("retry-after");
+    const wait = retry === null ? 500 * 2 ** attempt
+      : /^\d+$/.test(retry) ? Number(retry) * 1000
+      : Date.parse(retry) - Date.now();
+    if (!Number.isFinite(wait) || wait > 5000) return response;
+    await response.body?.cancel();
+    await delay(Math.max(0, wait), undefined, { signal });
+  }
+}
+
 async function fetchJson(url) {
   safeUrl(url);
-  const response = await fetch(url, {
-    signal: AbortSignal.timeout(30_000),
-    headers: {
-      "user-agent": "fidan-actions/setup",
-    },
-  });
-  safeUrl(response.url);
+  const response = await fetchReleaseResponse(url, 30_000);
   if (!response.ok) {
     throw new Error(
       `Failed to fetch manifest from ${url}: ${response.status} ${response.statusText}`,

@@ -99,3 +99,15 @@ and rename behavior. Local checks:
 ```sh
 node --test setup/test/setup.test.mjs
 ```
+
+
+### Pinned cache and transient limits
+
+The cache action is pinned to official actions/cache v6.1.0 commit
+`55cc8345863c7cc4c66a329aec7e433d2d1c52a9`, verified against its exact official
+GitHub release tag on 2026-10-22 (not the mutable v6 label). Update only after
+checking the official exact-version tag and rerunning all three-OS setup checks.
+Manifest/archive GETs retry 429/503 at most twice within one total 30s/120s budget.
+Retry-After up to5s is respected; a longer or invalid value fails closed instead
+of retrying early. Exhaustion preserves an existing installation. No token is
+required or sent by the download client.

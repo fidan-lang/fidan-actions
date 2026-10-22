@@ -431,3 +431,23 @@ test("distribution uses unmodified Apache 2.0 and retains NOTICE", () => {
   );
   assert.match(fs.readFileSync(new URL("../../NOTICE", import.meta.url), "utf8"), /Copyright/);
 });
+
+
+test("cache dependency is the verified immutable official release", () => {
+  const action = fs.readFileSync(new URL("../action.yml", import.meta.url), "utf8");
+  assert(action.includes("actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9"));
+  assert(!action.includes("actions/cache@v6"));
+});
+
+test("credential-less rate limits retry within a bounded budget and preserve installs on exhaustion", async () => {
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),"fidan-action-rate-"));
+  const bytes=tar([["fidan","rate recovered"]]);let attempts=0;let exhausted=false;
+  const server=createServer((request,res)=>{assert.equal(request.headers.authorization,undefined);attempts++;
+    if(exhausted || attempts===1){res.writeHead(429,{"Retry-After":"0"});res.end("limited");}else res.end(bytes);});
+  await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
+  const env={FIDAN_BINARY_RELPATH:"fidan",FIDAN_INSTALL_DIR:root,FIDAN_URL:`http://127.0.0.1:${server.address().port}/`,FIDAN_SHA256:createHash("sha256").update(bytes).digest("hex")};
+  try {await install(env);assert.equal(attempts,2);assert.equal(fs.readFileSync(path.join(root,"fidan"),"utf8"),"rate recovered");
+    exhausted=true;attempts=0;await assert.rejects(install(env),/HTTP 429/);assert.equal(attempts,3);
+    assert.equal(fs.readFileSync(path.join(root,"fidan"),"utf8"),"rate recovered");verifyInstalled(root,"fidan",env.FIDAN_SHA256);
+  }finally{server.close();await once(server,"close");fs.rmSync(root,{recursive:true,force:true});}
+});

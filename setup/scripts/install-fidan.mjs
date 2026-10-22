@@ -5,7 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { hostname } from "node:os";
 import { pathToFileURL } from "node:url";
-import { safeBinaryPath, safeOutput, safeUrl } from "./resolve-fidan.mjs";
+import { safeBinaryPath, safeOutput, safeUrl, fetchReleaseResponse } from "./resolve-fidan.mjs";
 const MAX_DOWNLOAD = 128 * 1024 * 1024;
 const MAX_EXPANDED = 512 * 1024 * 1024;
 const sha = (bytes) => createHash("sha256").update(bytes).digest("hex");
@@ -220,7 +220,7 @@ export async function install(env = process.env) {
   const lock = claimInstallation(root, relative);
   let committed = false;
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(120_000) });
+    const response = await fetchReleaseResponse(url, 120_000);
     safeUrl(response.url);
     if (!response.ok)
       throw new Error(`Release download failed: HTTP ${response.status}`);
