@@ -111,3 +111,17 @@ Manifest/archive GETs retry 429/503 at most twice within one total 30s/120s budg
 Retry-After up to5s is respected; a longer or invalid value fails closed instead
 of retrying early. Exhaustion preserves an existing installation. No token is
 required or sent by the download client.
+
+## Local candidate artifact check
+
+The normal `node --test setup/test/setup.test.mjs` suite is offline except for its
+own loopback fixtures. For a coordinated compiler candidate, also set
+`FIDAN_CANDIDATE_ARCHIVE` to the actual compiler `.tar.gz` archive and
+`FIDAN_CANDIDATE_VERSION` to the exact proposed version from the compiler's
+release-candidate configuration, then run the same command. The additional gate
+serves those actual bytes on loopback, installs through the real action code,
+verifies archive/executable integrity, and executes `--version` from its isolated
+installation. It does not change PATH, system installs or release assets.
+Executed native images remain ignored artifacts under `target/candidate-install-*`
+because Windows image scanners can retain handles briefly after process exit.
+Without the explicit archive, that optional artifact gate reports a SKIP.

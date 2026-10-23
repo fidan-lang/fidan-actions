@@ -4,7 +4,7 @@ import { gzipSync, gunzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import fs from "node:fs";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { once } from "node:events";
 import os from "node:os";
 import path from "node:path";
@@ -450,4 +450,37 @@ test("credential-less rate limits retry within a bounded budget and preserve ins
     exhausted=true;attempts=0;await assert.rejects(install(env),/HTTP 429/);assert.equal(attempts,3);
     assert.equal(fs.readFileSync(path.join(root,"fidan"),"utf8"),"rate recovered");verifyInstalled(root,"fidan",env.FIDAN_SHA256);
   }finally{server.close();await once(server,"close");fs.rmSync(root,{recursive:true,force:true});}
+});
+
+// Optional artifact-level gate: exercise the real installer against actual RC bytes.
+test("actual candidate archive installs and executes without touching system tools", {
+  skip: process.env.FIDAN_CANDIDATE_ARCHIVE ? false : "set FIDAN_CANDIDATE_ARCHIVE and FIDAN_CANDIDATE_VERSION for the coordinated artifact gate",
+}, async () => {
+  const version = process.env.FIDAN_CANDIDATE_VERSION;
+  assert(version, "The expected version must come from the candidate configuration");
+  const bytes = fs.readFileSync(process.env.FIDAN_CANDIDATE_ARCHIVE);
+  const checksum = createHash("sha256").update(bytes).digest("hex");
+  const artifacts = new URL("../../target/", import.meta.url);
+  fs.mkdirSync(artifacts, {recursive: true});
+  const root = fs.mkdtempSync(new URL("candidate-install-", artifacts));
+  const binary = process.platform === "win32" ? "fidan.exe" : "fidan";
+  const server = createServer((request, response) => {
+    assert.equal(request.headers.authorization, undefined);
+    response.end(bytes);
+  });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  try {
+    await install({FIDAN_BINARY_RELPATH: binary, FIDAN_INSTALL_DIR: root,
+      FIDAN_URL: `http://127.0.0.1:${server.address().port}/candidate.tar.gz`, FIDAN_SHA256: checksum});
+    const installed = verifyInstalled(root, binary, checksum);
+    const result = spawnSync(installed, ["--version"], {encoding: "utf8", windowsHide: true, timeout: 20000});
+    assert.ifError(result.error);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), `fidan ${version}`);
+  } finally {
+    server.close(); await once(server, "close");
+    // Keep executed images as ignored build artifacts: Windows scanners may
+    // retain their file handles after exit. No install/verification retry occurs.
+    console.log(`Candidate installer artifact: ${root}`);
+  }
 });
