@@ -40,6 +40,10 @@ test("source checkout must match the exact clean Git commit", () => {
     const sha = git("rev-parse", "HEAD");
     verifyCheckout(root, sha);
     assert.throws(() => verifyCheckout(root, "0".repeat(40)));
+    const untracked = path.join(root, "injected.fdn");
+    writeFileSync(untracked, "unreviewed module");
+    assert.throws(() => verifyCheckout(root, sha), /modified|untracked/);
+    rmSync(untracked);
     writeFileSync(path.join(root, "source"), "substituted");
     assert.throws(() => verifyCheckout(root, sha));
   } finally { rmSync(root, {recursive: true, force: true}); }

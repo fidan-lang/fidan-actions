@@ -23,9 +23,9 @@ export function verifyCheckout(directory, expected) {
   if (result.error || result.status !== 0 || result.stdout.trim() !== expected) {
     throw new Error("Checked-out candidate does not match the approved immutable SHA");
   }
-  const changes = spawnSync("git", ["-C", directory, "status", "--porcelain", "--untracked-files=no"], { encoding: "utf8" });
+  const changes = spawnSync("git", ["-C", directory, "status", "--porcelain", "--untracked-files=all"], { encoding: "utf8" });
   if (changes.error || changes.status !== 0 || changes.stdout.trim()) {
-    throw new Error("Candidate checkout contains modified tracked source");
+    throw new Error("Candidate checkout contains modified or untracked source");
   }
 }
 
