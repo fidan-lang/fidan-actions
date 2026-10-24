@@ -125,3 +125,22 @@ installation. It does not change PATH, system installs or release assets.
 Executed native images remain ignored artifacts under `target/candidate-install-*`
 because Windows image scanners can retain handles briefly after process exit.
 Without the explicit archive, that optional artifact gate reports a SKIP.
+
+## Coordinated source-candidate CI
+
+The website/editor candidate gates check out this repository at a reviewed full
+commit SHA, verify it against their `ci/compiler-candidate.json`, and run the
+same installer tests against the actual compiler built from the selected source
+SHA. `node scripts/check-built-candidate.mjs /absolute/path/to/fidan` creates a
+local archive and requires the real artifact test; there is no `latest` or public
+1.0.16 fallback. Downloads use loopback fixtures only in this acceptance test.
+The normal release example pins above describe public v1 usage, not certification
+of the as-yet-unpushed audit implementation. For coordinated audit consumers,
+use the exact SHA recorded in their candidate contract after the owner pushes it.
+
+`python scripts/check-workflows.py /path/to/repo [...]` (PyYAML 6.0.3) rejects
+expressions in executable `run`/JavaScript `script` bodies, mutable action pins,
+and the known stale Setup Action commit. Expressions in action inputs and env
+remain data; dynamic checkout refs still need explicit runtime validation.
+`python scripts/test-workflows.py` and
+`node --test scripts/verify-candidate.test.mjs` cover those boundaries.

@@ -14,6 +14,17 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 24
+      - name: Workflow security and candidate contract regressions
+        shell: pwsh
+        run: |
+          python -m pip install PyYAML==6.0.3
+          if ($LASTEXITCODE -ne 0) { throw 'YAML tooling installation failed' }
+          python scripts/test-workflows.py
+          if ($LASTEXITCODE -ne 0) { throw 'Workflow security regressions failed' }
+          python scripts/check-workflows.py .
+          if ($LASTEXITCODE -ne 0) { throw 'Workflow security gate failed' }
+          node --test scripts/verify-candidate.test.mjs
+          if ($LASTEXITCODE -ne 0) { throw 'Candidate identity regressions failed' }
       - name: Adversarial setup regressions
         run: node --test setup/test/setup.test.mjs
       - uses: ./setup
