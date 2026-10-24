@@ -14,7 +14,7 @@ test("candidate metadata rejects mutable, injected and foreign refs", () => {
   try {
     writeFileSync(file, JSON.stringify(valid));
     assert.deepEqual(readCandidate(file), valid);
-    for (const value of ["latest", "main", "v1.0.16", "abc", "a".repeat(40) + "\nFORGED=1", '"; throw "INJECTED']) {
+    for (const value of ["latest", "main", "v1.0.16", "abc", "a".repeat(40) + "\n", "a".repeat(40) + "\nFORGED=1", '"; throw "INJECTED']) {
       for (const field of ["compiler_sha", "setup_sha"]) {
         writeFileSync(file, JSON.stringify({...valid, [field]: value}));
         assert.throws(() => readCandidate(file));

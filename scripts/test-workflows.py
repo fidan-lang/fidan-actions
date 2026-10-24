@@ -1,6 +1,8 @@
 import importlib.util
 from pathlib import Path
 import unittest
+import tempfile
+import json
 import yaml
 
 spec = importlib.util.spec_from_file_location("check_workflows", Path(__file__).with_name("check-workflows.py"))
@@ -24,6 +26,18 @@ class WorkflowSecurityTests(unittest.TestCase):
             if "${{" not in ref:
                 self.assertTrue(gate.check_document({"with": {"repository": "fidan-lang/fidan-actions", "ref": ref}}))
         self.assertTrue(gate.check_document({"uses": "fidan-lang/fidan-actions/setup@" + gate.STALE_SETUP}))
+
+    def test_consumer_pin_must_match_its_candidate_contract(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "ci").mkdir()
+            (root / ".github/workflows").mkdir(parents=True)
+            (root / "ci/compiler-candidate.json").write_text(json.dumps({"setup_sha": "a" * 40}))
+            workflow = root / ".github/workflows/ci.yaml"
+            workflow.write_text("jobs:\n  test:\n    steps:\n      - uses: actions/checkout@" + "b" * 40 + "\n        with:\n          repository: fidan-lang/fidan-actions\n          ref: " + "c" * 40 + "\n")
+            self.assertTrue(gate.check_roots([root])[1])
+            workflow.write_text(workflow.read_text().replace("c" * 40, "a" * 40))
+            self.assertEqual(gate.check_roots([root])[1], [])
 
     def test_duplicate_yaml_keys_fail_closed(self):
         with self.assertRaises(ValueError):

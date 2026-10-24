@@ -4,6 +4,7 @@ Requires PyYAML 6.0.3. Pass one or more repository roots; no network or secrets 
 Expressions in env/with/if/names are data, not executable shell source.
 """
 import argparse
+import json
 from pathlib import Path
 import re
 import sys
@@ -53,6 +54,22 @@ def check_roots(roots):
         root = Path(root)
         paths = list((root / ".github/workflows").glob("*.y*ml"))
         paths += [p for p in (root / "setup").glob("action.y*ml")]
+        candidate_file = root / "ci/compiler-candidate.json"
+        if candidate_file.is_file():
+            contract = json.loads(candidate_file.read_text(encoding="utf-8"))
+            expected_setup = contract.get("setup_sha", "")
+            if not re.fullmatch(r"[a-f0-9]{40}", str(expected_setup)):
+                errors.append(f"{candidate_file}: exact audited Setup SHA required")
+            for path in paths:
+                document = yaml.load(path.read_text(encoding="utf-8"), Loader=WorkflowLoader)
+                for job in document.get("jobs", {}).values():
+                    for step in job.get("steps", []):
+                        checkout = step.get("with", {})
+                        if checkout.get("repository") == "fidan-lang/fidan-actions" and checkout.get("ref") != expected_setup:
+                            errors.append(f"{path}: Setup checkout differs from candidate contract")
+                        uses = step.get("uses", "")
+                        if uses.startswith("fidan-lang/fidan-actions/") and uses.split("@")[-1] != expected_setup:
+                            errors.append(f"{path}: Setup pin differs from candidate contract")
         for path in sorted(paths):
             count += 1
             try:
