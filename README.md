@@ -52,7 +52,7 @@ other repositories can consume safely.
 
 ## Status
 
-`setup/` is implemented. Tags `v1` and `v1.0.0` exist; this audit branch is not released. Pin the reviewed commit SHA for immutable workflows. `latest` selects stable SemVer releases; exact prereleases require an explicit version. The manifest and HTTPS distribution are trusted publisher inputs. Restored cache archives are rehashed against that manifest and their extracted executable bytes are compared before use; adjacent metadata is not an authenticity anchor. See [installation, recovery and trust boundaries](setup/README.md#integrity-and-installation-contract).
+`setup/` is implemented. Tags `v1` and `v1.0.0` exist; unreleased source changes are not included in those tags. Pin the reviewed commit SHA for immutable workflows. `latest` selects stable SemVer releases; exact prereleases require an explicit version. The manifest and HTTPS distribution are trusted publisher inputs. Restored cache archives are rehashed against that manifest and their extracted executable bytes are compared before use; adjacent metadata is not an authenticity anchor. See [installation, recovery and trust boundaries](setup/README.md#integrity-and-installation-contract).
 
 ## License and branding
 

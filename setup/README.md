@@ -134,9 +134,6 @@ same installer tests against the actual compiler built from the selected source
 SHA. `node scripts/check-built-candidate.mjs /absolute/path/to/fidan` creates a
 local archive and requires the real artifact test; there is no `latest` or public
 1.0.16 fallback. Downloads use loopback fixtures only in this acceptance test.
-The normal release example pins above describe public v1 usage, not certification
-of the as-yet-unpushed audit implementation. For coordinated audit consumers,
-use the exact SHA recorded in their candidate contract after the owner pushes it.
 
 `python scripts/check-workflows.py /path/to/repo [...]` (PyYAML 6.0.3) rejects
 expressions in executable `run`/JavaScript `script` bodies, mutable action pins,
