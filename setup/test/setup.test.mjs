@@ -20,6 +20,10 @@ import {
   install,
   verifyInstalled,
 } from "../scripts/install-fidan.mjs";
+// macOS /var may alias /private/var. Fixtures use the real temporary root;
+// the installer must still reject symbolic destination ancestors supplied by users.
+const temporaryRoot = fs.realpathSync(os.tmpdir());
+
 function tar(entries) {
   const chunks = [];
   for (const [name, body, type = "0"] of entries) {
@@ -123,7 +127,7 @@ test("tar selection rejects traversal, links, duplicates, bad checksum and ambig
   assert.throws(() => executableFromArchive(damaged, "fidan"));
 });
 test("download failure/tamper preserve existing install, valid install verifies and cache tamper fails", async () => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "fidan-action-test-"));
+  const root = fs.mkdtempSync(path.join(temporaryRoot, "fidan-action-test-"));
   const bytes = tar([["fidan", "new executable"]]);
   const server = createServer((_, res) => res.end(bytes));
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -154,7 +158,7 @@ test("download failure/tamper preserve existing install, valid install verifies 
 });
 
 async function releaseFixture(check) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), "fidan-action-security-"));
+  const root = fs.mkdtempSync(path.join(temporaryRoot, "fidan-action-security-"));
   const bytes = tar([["fidan", "NEW"]]);
   const server = createServer((_, res) => res.end(bytes));
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -440,7 +444,7 @@ test("cache dependency is the verified immutable official release", () => {
 });
 
 test("credential-less rate limits retry within a bounded budget and preserve installs on exhaustion", async () => {
-  const root=fs.mkdtempSync(path.join(os.tmpdir(),"fidan-action-rate-"));
+  const root=fs.mkdtempSync(path.join(temporaryRoot,"fidan-action-rate-"));
   const bytes=tar([["fidan","rate recovered"]]);let attempts=0;let exhausted=false;
   const server=createServer((request,res)=>{assert.equal(request.headers.authorization,undefined);attempts++;
     if(exhausted || attempts===1){res.writeHead(429,{"Retry-After":"0"});res.end("limited");}else res.end(bytes);});
