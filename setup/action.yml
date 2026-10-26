@@ -55,10 +55,10 @@ runs:
     - name: Restore cached install
       if: ${{ inputs.cache == 'true' }}
       id: cache
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0, official release verified 2026-10-22
       with:
         path: ${{ steps.resolve.outputs.install-dir }}
-        key: fidan-${{ runner.os }}-${{ steps.resolve.outputs.host-triple }}-${{ steps.resolve.outputs.version-resolved }}
+        key: fidan-v3-${{ steps.resolve.outputs.cache-key }}
 
     - name: Install Fidan (Unix)
       if: ${{ runner.os != 'Windows' && (inputs.cache != 'true' || steps.cache.outputs.cache-hit != 'true') }}
@@ -87,26 +87,9 @@ runs:
       shell: bash
       env:
         CACHE_HIT: ${{ steps.cache.outputs.cache-hit }}
-      run: |
-        install_dir='${{ steps.resolve.outputs.install-dir }}'
-        bin_rel='${{ steps.resolve.outputs.binary-relpath }}'
-        host_triple='${{ steps.resolve.outputs.host-triple }}'
-        version_resolved='${{ steps.resolve.outputs.version-resolved }}'
-        bin_path="$install_dir/$bin_rel"
-        if [ ! -f "$bin_path" ]; then
-          echo "Installed Fidan binary was not found at $bin_path" >&2
-          exit 1
-        fi
-        chmod +x "$bin_path" || true
-        printf '%s\n' "$(dirname "$bin_path")" >> "$GITHUB_PATH"
-        cache_hit="${CACHE_HIT:-false}"
-        if [ -z "$cache_hit" ]; then
-          cache_hit='false'
-        fi
-        {
-          echo "fidan-bin=$bin_path"
-          echo "install-dir=$install_dir"
-          echo "version-resolved=$version_resolved"
-          echo "host-triple=$host_triple"
-          echo "cache-hit=$cache_hit"
-        } >> "$GITHUB_OUTPUT"
+        FIDAN_INSTALL_DIR: ${{ steps.resolve.outputs.install-dir }}
+        FIDAN_BINARY_RELPATH: ${{ steps.resolve.outputs.binary-relpath }}
+        FIDAN_SHA256: ${{ steps.resolve.outputs.archive-sha256 }}
+        FIDAN_HOST: ${{ steps.resolve.outputs.host-triple }}
+        FIDAN_VERSION: ${{ steps.resolve.outputs.version-resolved }}
+      run: node "$GITHUB_ACTION_PATH/scripts/finalize-fidan.mjs"

@@ -13,3 +13,7 @@ coverage/
 .env
 .env.*
 !.env.example
+
+/target/
+
+scripts/__pycache__/
