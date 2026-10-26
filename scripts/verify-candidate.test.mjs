@@ -20,6 +20,10 @@ test("candidate metadata rejects mutable, injected and foreign refs", () => {
         assert.throws(() => readCandidate(file));
       }
     }
+    for (const args of [{args_repository: "someone/args", args_sha: "c".repeat(40)}, {args_repository: "fidan-lang/args", args_sha: "main"}, {args_repository: "fidan-lang/args"}]) {
+      writeFileSync(file, JSON.stringify({...valid, ...args}));
+      assert.throws(() => readCandidate(file));
+    }
     writeFileSync(file, JSON.stringify({...valid, compiler_repository: "someone/fidan"}));
     assert.throws(() => readCandidate(file));
   } finally { rmSync(root, { recursive: true }); }

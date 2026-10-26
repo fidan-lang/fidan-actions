@@ -141,3 +141,10 @@ and the known stale Setup Action commit. Expressions in action inputs and env
 remain data; dynamic checkout refs still need explicit runtime validation.
 `python scripts/test-workflows.py` and
 `node --test scripts/verify-candidate.test.mjs` cover those boundaries.
+
+### Upcoming stable compiler
+
+The next intended compiler release is **1.1.0 stable**, not an RC. Until it is
+published, use an exact source candidate for new APIs; do not request an unavailable
+release or fall back to 1.0.16. After approval/publication, `version: 1.1.0` selects
+the immutable stable archive. `latest` considers stable SemVer releases, not RCs.
